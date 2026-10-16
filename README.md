@@ -35,7 +35,7 @@ Fez uma pedalada épica e quer partilhar os dados no Instagram com qualidade pro
 Com o Python 3.10+ instalado, faça o clone e inicie o ambiente:
 
 ```bash
-git clone [https://github.com/Ghost-Do-While/cycling-poster-generator.git](https://github.com/Ghost-Do-While/cycling-poster-generator.git)
+git clone https://github.com/Ghost-Do-While/cycling-poster-generator.git
 cd cycling-poster-generator
 
 # Instalar dependências
