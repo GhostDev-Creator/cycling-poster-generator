@@ -19,7 +19,7 @@
 
 <br />
 
-<img width="1536" height="1024" src="https://github.com/user-attachments/assets/a9ffd688-4f5d-4be7-89c8-7c5a43606986" alt="Demonstração da Interface do Cycling Poster Generator"/>
+<img width="1536" height="1024" src="https://github.com/user-attachments/assets/d0a6bf12-6c1f-4bf5-b9a8-22585c5de3de" alt="Demonstração da Interface do Cycling Poster Generator"/>
 
 <br /><br />
 
