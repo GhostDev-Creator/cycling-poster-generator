@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cycling Poster Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Montserrat', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
+        .strava-orange { background-color: #FC5200; }
+        .strava-orange:hover { background-color: #e04a00; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(71, 85, 105, 0.5); }
+        
+        @keyframes tutorial-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(252, 82, 0, 0.8); border-color: #FC5200; }
+            70% { box-shadow: 0 0 0 12px rgba(252, 82, 0, 0); border-color: #ff7b33; }
+            100% { box-shadow: 0 0 0 0 rgba(252, 82, 0, 0); border-color: #FC5200; }
+        }
+        .tutorial-highlight {
+            animation: tutorial-pulse 2s infinite !important;
+            border: 2px solid #FC5200 !important;
+            border-radius: 0.5rem;
+            position: relative;
+            z-index: 40;
+            background-color: rgba(30, 41, 59, 0.9) !important;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-3 md:p-8 relative pb-24">
+
+    <div id="welcomeModal" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[60] flex items-center justify-center hidden px-4">
+        <div class="bg-slate-800 p-6 md:p-8 rounded-2xl max-w-sm w-full shadow-2xl border border-[#FC5200]/30 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#FC5200] to-yellow-500"></div>
+            <div class="text-5xl mb-4">🚴✨</div>
+            <h2 class="text-2xl font-bold mb-2 text-white">Pronto para criar?</h2>
+            <p class="text-slate-300 mb-6 text-sm">Vou te guiar passo a passo para criar sua arte de ciclismo de forma super rápida.</p>
+            <button id="btnStart" class="w-full bg-[#FC5200] hover:bg-[#e04a00] text-white font-bold py-3 md:py-4 rounded-xl transition shadow-[0_0_20px_rgba(252,82,0,0.4)] text-lg">
+                Iniciar Tutorial Rápido
+            </button>
+            <button id="btnSkipModal" class="mt-4 text-xs text-slate-500 hover:text-slate-300 underline">
+                Já sei como funciona, pular.
+            </button>
+        </div>
+    </div>
+
+    <div id="tutorialBanner" class="fixed bottom-0 left-0 right-0 bg-[#FC5200] text-white p-4 shadow-[0_-10px_40px_rgba(252,82,0,0.4)] z-50 transform translate-y-full transition-transform duration-300 flex justify-between items-center rounded-t-2xl md:rounded-none hidden">
+        <div class="flex-1 pr-4">
+            <p id="tutorialText" class="text-base font-bold leading-tight"></p>
+            <p id="tutorialSubtext" class="text-xs opacity-90 mt-1"></p>
+        </div>
+        <button id="tutorialNextBtn" class="bg-white text-[#FC5200] px-4 py-2 rounded-full text-sm font-bold shadow-lg active:scale-95 transition shrink-0">Avançar</button>
+        <button id="tutorialSkipBtn" class="absolute -top-3 right-4 bg-slate-800 text-slate-300 w-8 h-8 flex items-center justify-center rounded-full text-lg shadow-lg border border-slate-600">×</button>
+    </div>
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-6 md:mb-8 text-center relative">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-tight mb-2">🚴 CYCLING POSTER <span class="text-[#FC5200]">GENERATOR</span></h1>
+            <p class="text-slate-400 text-sm md:text-base px-2">Transforme suas pedaladas em artes épicas.</p>
+            
+            <div id="step_strava" class="mt-6 md:mt-8 flex flex-col justify-center items-center p-4">
+                <a id="btnStravaLogin" href="/strava/login" class="flex items-center justify-center gap-2 bg-white text-slate-800 font-bold py-3 px-8 rounded-full shadow-md hover:bg-slate-200 transition mb-2 w-full max-w-xs">
+                    <svg class="w-6 h-6 text-[#FC5200]" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+                    Conectar Strava
+                </a>
+                <p id="stravaSecurityNote" class="text-[10px] md:text-[11px] text-slate-500 max-w-xs text-center mb-4">
+                    🔒 Seguro & Privado: Nenhuma senha ou histórico é salvo.
+                </p>
+                
+                <div id="stravaActivitiesWrapper" class="hidden w-full max-w-md bg-slate-800/90 p-4 rounded-xl border border-[#FC5200]/50 shadow-lg mt-2 mb-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-5 h-5 text-[#FC5200]" viewBox="0 0 24 24" fill="currentColor"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+                        <label class="block text-sm font-semibold text-slate-200">Selecione a Atividade:</label>
+                    </div>
+                    <select id="strava_activity_select" class="w-full bg-slate-900 border border-slate-600 rounded-md text-sm md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200] text-slate-200">
+                        <option value="" disabled selected>-- Escolha uma atividade --</option>
+                    </select>
+                    <p id="stravaSuccessMsg" class="text-xs text-green-400 font-bold mt-3 hidden text-center bg-green-900/30 py-2 rounded-md border border-green-500/30">
+                        ✓ Dados e mapa importados com sucesso!
+                    </p>
+                </div>
+
+                <div id="manualGpxWrapper" class="w-full max-w-md mt-2">
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-slate-700"></div>
+                        <span class="flex-shrink-0 mx-4 text-slate-500 text-xs">OU ENVIE UM ARQUIVO MANUAL</span>
+                        <div class="flex-grow border-t border-slate-700"></div>
+                    </div>
+                    <label class="block text-sm font-medium mb-1 text-left mt-2">Arquivo GPX (Opcional)</label>
+                    <input type="file" id="gpx_file" form="posterForm" name="gpx_file" accept=".gpx" class="w-full text-base md:text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-white cursor-pointer border border-slate-600 rounded-md p-1 bg-slate-800">
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            <div class="glass-panel rounded-2xl p-4 md:p-6 shadow-xl">
+                <form id="posterForm" class="space-y-6">
+                    <input type="hidden" id="polyline_data" name="polyline_data" value="">
+
+                    <div>
+                        <h2 class="text-base md:text-lg font-semibold border-b border-slate-600 pb-2 mb-4 text-[#FC5200]">Fotos & Cores</h2>
+                        <div class="space-y-4">
+                            <div id="step_photo" class="p-2 -mx-2">
+                                <label class="block text-sm font-medium mb-1">Foto Base <span class="text-red-400">*</span></label>
+                                <input type="file" id="foto_base" name="foto_base" accept="image/jpeg, image/png" required class="w-full text-base md:text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-700 file:text-white cursor-pointer border border-slate-600 rounded-md p-1 bg-slate-800">
+                            </div>
+                            <div id="step_preset" class="p-2 -mx-2">
+                                <label class="block text-sm font-medium mb-1">Filtro de Cor (Opcional)</label>
+                                <select id="preset_id" name="preset_id" class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 text-slate-200 focus:outline-none focus:border-[#FC5200]">
+                                    <option value="" disabled selected>-- Escolha um Filtro --</option>
+                                    <option value="nenhum">Nenhum (Manter Original)</option>
+                                </select>
+                                <button type="button" id="btnToggleManualUpload" class="text-xs text-slate-400 hover:text-white mt-2 underline block">
+                                    Quero enviar meu próprio arquivo HaldCLUT
+                                </button>
+                                <div id="manualUploadContainer" class="hidden mt-2 p-3 bg-slate-800/50 rounded border border-slate-700">
+                                    <label class="block text-xs text-slate-400 mb-1">Arquivo HaldCLUT Personalizado</label>
+                                    <input type="file" id="hald_file" name="hald_file" accept="image/jpeg, image/png" class="w-full text-xs text-slate-300 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-slate-600 file:text-white cursor-pointer bg-slate-900 border border-slate-600 rounded p-1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="step_texts" class="p-2 -mx-2">
+                        <h2 class="text-base md:text-lg font-semibold border-b border-slate-600 pb-2 mb-4 text-[#FC5200]">A História</h2>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block text-sm font-medium mb-1">Início da Rota <span class="text-red-400">*</span></label>
+                                <input type="text" id="start_loc" name="start_loc" placeholder="Ex: Casa" required class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            </div>
+                            <div class="col-span-2 md:col-span-1">
+                                <label class="block text-sm font-medium mb-1">Destino <span class="text-red-400">*</span></label>
+                                <input type="text" id="end_loc" name="end_loc" placeholder="Ex: Montanha" required class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-sm font-medium mb-1">Com quem foi? <span class="text-red-400">*</span></label>
+                                <input type="text" id="cyclists" name="cyclists" placeholder="Ex: Solo Ride ou c/ Amigos" required class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-sm font-medium mb-1">Mensagem Final (Opcional)</label>
+                                <input type="text" id="mensagem_rodape" name="mensagem_rodape" placeholder="Deixe vazio para ocultar da arte" class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="step_metrics" class="p-2 -mx-2">
+                        <h2 class="text-base md:text-lg font-semibold border-b border-slate-600 pb-2 mb-4 text-[#FC5200]">Os Números</h2>
+                        <p class="text-xs text-slate-400 mb-3">Preencha manualmente ou deixe o Strava preencher para você.</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Distância (km) <span class="text-red-400">*</span></label>
+                                <input type="number" step="0.01" id="distance" name="distance" placeholder="Ex: 45.5" required class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Tempo <span class="text-red-400">*</span></label>
+                                <input type="text" id="time_str" name="time_str" placeholder="Ex: 2:30:00" required class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Elevação (m) <span class="text-red-400">*</span></label>
+                                <input type="number" id="elevation" name="elevation" placeholder="Ex: 600" required class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Veloc. (km/h) <span class="text-red-400">*</span></label>
+                                <input type="number" step="0.1" id="speed" name="speed" placeholder="Ex: 22.5" required class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Formato de Imagem</label>
+                        <select name="format_choice" class="w-full bg-slate-800 border border-slate-600 rounded-md text-base md:text-sm px-3 py-3 md:py-2 focus:outline-none focus:border-[#FC5200]">
+                            <option value="1">Stories Instagram (9:16)</option>
+                            <option value="2">Feed Instagram (4:5)</option>
+                            <option value="3">Original da Foto</option>
+                        </select>
+                    </div>
+
+                    <div id="step_submit" class="p-2 -mx-2 mt-4">
+                        <button type="submit" id="submitBtn" class="w-full strava-orange text-white text-lg font-bold py-4 px-4 rounded-xl shadow-lg transition duration-200 flex justify-center items-center active:scale-95">
+                            <span>Gerar Arte Mágica</span>
+                            <svg id="loadingSpinner" class="animate-spin hidden ml-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </button>
+                    </div>
+                    <div id="errorMessage" class="hidden text-red-400 text-sm mt-2 text-center bg-red-900/30 p-2 rounded border border-red-500/50"></div>
+                </form>
+            </div>
+
+            <div id="previewPanel" class="glass-panel rounded-2xl p-4 md:p-6 shadow-xl flex flex-col items-center justify-center min-h-[300px] md:min-h-[500px]">
+                <div id="placeholder" class="text-center text-slate-500">
+                    <p class="text-5xl mb-4 opacity-50">🖼️</p>
+                    <p class="text-sm">A arte final aparecerá aqui.</p>
+                </div>
+                <div id="resultContainer" class="hidden w-full flex flex-col items-center">
+                    <img id="resultImage" src="" alt="Poster" class="max-h-[50vh] md:max-h-[600px] rounded-lg shadow-2xl border border-slate-600 object-contain mb-6">
+                    <a id="downloadBtn" href="" download="poster_strava.jpg" class="bg-[#FC5200] text-white font-bold py-3 px-8 rounded-full shadow-lg active:scale-95 transition">
+                        Baixar no Computador
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const stravaToken = urlParams.get('token');
+        let stravaActivities = [];
+
+        function atualizarTextoDownload() {
+            const ua = navigator.userAgent;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+            document.getElementById('downloadBtn').innerText = isMobile ? 'Baixar no Celular' : 'Baixar no Computador';
+        }
+
+        function getTutorialSteps() {
+            if (stravaToken) {
+                return [
+                    { id: 'stravaActivitiesWrapper', title: '1/5: A Rota', sub: 'Selecione a atividade do Strava para importar os números e o mapa.' },
+                    { id: 'step_photo', title: '2/5: A Foto', sub: 'Escolha a imagem de fundo para a sua arte.' },
+                    { id: 'step_preset', title: '3/5: A Cor', sub: 'Escolha um filtro na lista para realçar a foto.' },
+                    { id: 'step_texts', title: '4/5: A História', sub: 'Preencha o local de início e fim. (O Strava não preenche nomes).' },
+                    { id: 'step_submit', title: '5/5: A Magia!', sub: 'Clique em Gerar Arte e aguarde alguns segundos.' }
+                ];
+            } else {
+                return [
+                    { id: 'step_strava', title: '1/6: O Mapa (Opcional)', sub: 'Conecte o Strava, adicione um GPX ou clique em Avançar para criar sem mapa.' },
+                    { id: 'step_photo', title: '2/6: A Foto', sub: 'Escolha a imagem de fundo para a sua arte.' },
+                    { id: 'step_preset', title: '3/6: A Cor', sub: 'Escolha um filtro na lista para realçar a foto.' },
+                    { id: 'step_texts', title: '4/6: A História', sub: 'Onde foi? Escreva os detalhes da rota.' },
+                    { id: 'step_metrics', title: '5/6: Os Números', sub: 'Preencha os km, elevação e velocidade manualmente.' },
+                    { id: 'step_submit', title: '6/6: A Magia!', sub: 'Tudo pronto. Clique em Gerar Arte!' }
+                ];
+            }
+        }
+
+        let tutorialSteps = [];
+        let currentStep = 0;
+        let isTutorialActive = false;
+        const banner = document.getElementById('tutorialBanner');
+
+        function startTutorial() {
+            document.getElementById('welcomeModal').classList.add('hidden');
+            isTutorialActive = true;
+            currentStep = 0;
+            tutorialSteps = getTutorialSteps();
+            localStorage.setItem('tutorialActive', 'true');
+            localStorage.setItem('tutorialStep', '0');
+            renderTutorialStep();
+        }
+
+        function endTutorial() {
+            isTutorialActive = false;
+            banner.classList.add('translate-y-full');
+            setTimeout(() => { banner.classList.add('hidden'); }, 300);
+            document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+            localStorage.setItem('tutorialDone', 'true');
+            localStorage.removeItem('tutorialActive');
+        }
+
+        function renderTutorialStep() {
+            if (!isTutorialActive || currentStep >= tutorialSteps.length) {
+                endTutorial();
+                return;
+            }
+            banner.classList.remove('hidden');
+            document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+
+            const stepData = tutorialSteps[currentStep];
+            const targetEl = document.getElementById(stepData.id);
+            
+            if (targetEl) {
+                targetEl.classList.add('tutorial-highlight');
+                const y = targetEl.getBoundingClientRect().top + window.scrollY - 100;
+                window.scrollTo({top: y, behavior: 'smooth'});
+            }
+
+            document.getElementById('tutorialText').innerText = stepData.title;
+            document.getElementById('tutorialSubtext').innerText = stepData.sub;
+            
+            setTimeout(() => { banner.classList.remove('translate-y-full'); }, 10);
+            localStorage.setItem('tutorialStep', currentStep.toString());
+        }
+
+        document.getElementById('tutorialNextBtn').addEventListener('click', () => { currentStep++; renderTutorialStep(); });
+        document.getElementById('tutorialSkipBtn').addEventListener('click', endTutorial);
+        document.getElementById('btnStart').addEventListener('click', startTutorial);
+        document.getElementById('btnSkipModal').addEventListener('click', () => {
+            document.getElementById('welcomeModal').classList.add('hidden');
+            localStorage.setItem('tutorialDone', 'true');
+        });
+
+        document.getElementById('gpx_file').addEventListener('change', () => {
+            if(isTutorialActive && tutorialSteps[currentStep].id.includes('strava')) { currentStep++; renderTutorialStep(); }
+        });
+        document.getElementById('foto_base').addEventListener('change', () => {
+            if(isTutorialActive && tutorialSteps[currentStep].id === 'step_photo') { currentStep++; renderTutorialStep(); }
+        });
+        document.getElementById('preset_id').addEventListener('change', () => {
+            if(isTutorialActive && tutorialSteps[currentStep].id === 'step_preset') { currentStep++; renderTutorialStep(); }
+        });
+        document.getElementById('hald_file').addEventListener('change', () => {
+            if(isTutorialActive && tutorialSteps[currentStep].id === 'step_preset') { currentStep++; renderTutorialStep(); }
+        });
+
+        let textsTimeout;
+        document.getElementById('step_texts').addEventListener('input', () => {
+            if(isTutorialActive && tutorialSteps[currentStep].id === 'step_texts') {
+                const start = document.getElementById('start_loc').value.trim();
+                const end = document.getElementById('end_loc').value.trim();
+                const cyclists = document.getElementById('cyclists').value.trim();
+                
+                clearTimeout(textsTimeout);
+                if(start !== "" && end !== "" && cyclists !== "") {
+                    textsTimeout = setTimeout(() => { 
+                        if(isTutorialActive && tutorialSteps[currentStep].id === 'step_texts') {
+                            currentStep++; 
+                            renderTutorialStep(); 
+                        }
+                    }, 1200);
+                }
+            }
+        });
+
+        let metricsTimeout;
+        document.getElementById('step_metrics').addEventListener('input', () => {
+            if(isTutorialActive && tutorialSteps[currentStep].id === 'step_metrics') {
+                const dist = document.getElementById('distance').value.trim();
+                const time = document.getElementById('time_str').value.trim();
+                const elev = document.getElementById('elevation').value.trim();
+                const speed = document.getElementById('speed').value.trim();
+                
+                clearTimeout(metricsTimeout);
+                if(dist !== "" && time !== "" && elev !== "" && speed !== "") {
+                    metricsTimeout = setTimeout(() => { 
+                        if(isTutorialActive && tutorialSteps[currentStep].id === 'step_metrics') {
+                            currentStep++; 
+                            renderTutorialStep(); 
+                        }
+                    }, 1200); 
+                }
+            }
+        });
+
+        const btnToggleManual = document.getElementById('btnToggleManualUpload');
+        const manualContainer = document.getElementById('manualUploadContainer');
+        const presetSelect = document.getElementById('preset_id');
+
+        btnToggleManual.addEventListener('click', () => {
+            manualContainer.classList.toggle('hidden');
+            if (!manualContainer.classList.contains('hidden')) {
+                btnToggleManual.textContent = "Esconder envio de arquivo personalizado";
+                presetSelect.disabled = true;
+                presetSelect.classList.add('opacity-50');
+            } else {
+                btnToggleManual.textContent = "Quero enviar meu próprio arquivo HaldCLUT";
+                presetSelect.disabled = false;
+                presetSelect.classList.remove('opacity-50');
+                document.getElementById('hald_file').value = ""; 
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            atualizarTextoDownload();
+            tutorialSteps = getTutorialSteps();
+            
+            const tutDone = localStorage.getItem('tutorialDone');
+            const tutActive = localStorage.getItem('tutorialActive');
+            const isFreshStravaReturn = window.location.search.includes('token=');
+            
+            if (!tutDone && !tutActive && !isFreshStravaReturn) {
+                document.getElementById('welcomeModal').classList.remove('hidden');
+            } else if (!tutDone && (tutActive === 'true' || isFreshStravaReturn)) {
+                isTutorialActive = true;
+                currentStep = isFreshStravaReturn ? 0 : parseInt(localStorage.getItem('tutorialStep') || '0');
+                setTimeout(() => renderTutorialStep(), 500);
+            }
+
+            try {
+                const response = await fetch('/presets');
+                const data = await response.json();
+                const select = document.getElementById('preset_id');
+                data.presets.forEach(preset => {
+                    const option = document.createElement('option');
+                    option.value = preset.id;
+                    option.textContent = preset.nome;
+                    select.appendChild(option);
+                });
+            } catch (error) { console.log("Aviso: Falha ao carregar presets."); }
+
+            if (stravaToken) {
+                document.getElementById('btnStravaLogin').classList.add('hidden');
+                document.getElementById('stravaSecurityNote').classList.add('hidden');
+                document.getElementById('manualGpxWrapper').classList.add('hidden');
+                document.getElementById('stravaActivitiesWrapper').classList.remove('hidden');
+                window.history.replaceState({}, document.title, "/");
+
+                fetch(`/strava/activities?token=${stravaToken}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        stravaActivities = data.activities;
+                        const select = document.getElementById('strava_activity_select');
+                        
+                        stravaActivities.forEach(act => {
+                            const option = document.createElement('option');
+                            option.value = act.id;
+                            
+                            const parts = act.data.split('-');
+                            const shortDate = parts.length === 3 ? `${parts[2]}/${parts[1]}` : act.data;
+                            const shortName = act.nome.length > 20 ? act.nome.substring(0, 20) + '...' : act.nome;
+                            const distRounded = Math.round(act.distancia);
+                            
+                            option.textContent = `${shortDate} • ${shortName} • ${distRounded}km`;
+                            select.appendChild(option);
+                        });
+                    })
+                    .catch(err => console.error("Falha ao recuperar atividades do Strava.", err));
+            }
+        });
+
+        document.getElementById('strava_activity_select').addEventListener('change', (e) => {
+            const actId = e.target.value;
+            if(!actId) return;
+            
+            const act = stravaActivities.find(a => a.id == actId);
+            if(act) {
+                document.getElementById('distance').value = act.distancia;
+                document.getElementById('time_str').value = act.tempo;
+                document.getElementById('elevation').value = act.elevacao;
+                document.getElementById('speed').value = act.velocidade;
+                
+                const polylineInput = document.getElementById('polyline_data');
+                polylineInput.value = (act.polyline && act.polyline.trim() !== "") ? act.polyline : "";
+
+                document.getElementById('stravaSuccessMsg').classList.remove('hidden');
+                
+                if(isTutorialActive && tutorialSteps[currentStep].id.includes('strava')) { 
+                    setTimeout(() => {
+                        currentStep++; 
+                        renderTutorialStep(); 
+                    }, 1200); 
+                }
+            }
+        });
+
+        document.getElementById('posterForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(isTutorialActive) endTutorial();
+
+            const btn = document.getElementById('submitBtn');
+            const spinner = document.getElementById('loadingSpinner');
+            const btnText = btn.querySelector('span');
+            const placeholder = document.getElementById('placeholder');
+            const resultContainer = document.getElementById('resultContainer');
+            const resultImage = document.getElementById('resultImage');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const errorMessage = document.getElementById('errorMessage');
+
+            btn.disabled = true;
+            spinner.classList.remove('hidden');
+            btnText.innerText = 'Processando...';
+            placeholder.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch('/gerar', { method: 'POST', body: formData });
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail || 'Ocorreu um erro interno no servidor.');
+                }
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                resultImage.src = imageUrl;
+                downloadBtn.href = imageUrl;
+
+                placeholder.classList.add('hidden');
+                resultContainer.classList.remove('hidden');
+                document.getElementById('previewPanel').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                errorMessage.innerText = error.message;
+                errorMessage.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                spinner.classList.add('hidden');
+                btnText.innerText = 'Gerar Arte Mágica';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+    "paleta": {
+        "texto_principal": [255, 255, 255, 255],
+        "texto_secundario": [228, 234, 240, 200],
+        "destaque": [252, 82, 0, 255],
+        "gradiente_base": [5, 5, 5, 0]
+    },
+    "layout": {
+        "gradiente_altura": 0.65,
+        "gradiente_opacidade_max": 240
+    },
+    "preferencias": {
+        "qualidade_exportacao": 95,
+        "pasta_saida": "saida"
+    }
+}
